@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        #tagSummary, #tagDetails {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tag Analysis</h1>
+    <div id="tagSummary"></div>
+    <div id="tagDetails"></div>
+
+    <script>
+        function formatNumberWithCommas(number) {
+            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            const tagSummary = document.getElementById('tagSummary');
+            const tagDetails = document.getElementById('tagDetails');
+
+            // Create tag summary
+            let summaryHTML = '<h2>Tag Summary</h2><table><tr><th>Tag</th><th>Count</th><th>Income</th><th>Expenses</th><th>Net Result</th></tr>';
+            for (const [tag, info] of Object.entries(data.tags)) {
+                const income = info.income || 0;
+                const expenses = info.expenses || 0;
+                const netResult = income - expenses;
+                summaryHTML += `<tr>
+                    <td>${tag}</td>
+                    <td>${info.count}</td>
+                    <td>${formatNumberWithCommas(income.toFixed(2))} IQD</td>
+                    <td>${formatNumberWithCommas(expenses.toFixed(2))} IQD</td>
+                    <td>${formatNumberWithCommas(netResult.toFixed(2))} IQD</td>
+                </tr>`;
+            }
+            summaryHTML += '</table>';
+            tagSummary.innerHTML = summaryHTML;
+
+            // Create tag details
+            let detailsHTML = '<h2>Tag Details</h2>';
+            for (const [tag, info] of Object.entries(data.tags)) {
+                detailsHTML += `<h3>${tag}</h3><table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Note</th></tr>`;
+                data.rows.forEach(row => {
+                    if (row.tags.includes(tag)) {
+                        detailsHTML += `<tr>
+                            <td>${row.date}</td>
+                            <td>${row.type}</td>
+                            <td>${formatNumberWithCommas(row.amount.toFixed(2))} IQD</td>
+                            <td>${row.note}</td>
+                        </tr>`;
+                    }
+                });
+                detailsHTML += '</table>';
+            }
+            tagDetails.innerHTML = detailsHTML;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,144 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 80%;
+    max-width: 800px;
+    margin: auto;
+}
+
+h1 {
+    margin-bottom: 20px;
+}
+
+#uploadBtn, #analyzeBtn, #saveTagsBtn {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#uploadBtn:hover, #analyzeBtn:hover, #saveTagsBtn:hover {
+    background-color: #0056b3;
+}
+
+#summaryContainer {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+#summaryContainer p {
+    margin: 5px 0;
+    flex: 1 1 45%;
+}
+
+#tableContainer {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+table, th, td {
+    border: 1px solid #ddd;
+}
+
+th, td {
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #007BFF;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr.highlight {
+    background-color: #ffcccc;
+}
+
+#taggingContainer {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+#taggingContainer input {
+    flex: 1 1 70%;
+    padding: 10px;
+    margin-right: 10px;
+}
+
+#taggingContainer button {
+    flex: 1 1 25%;
+    padding: 10px;
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#taggingContainer button:hover {
+    background-color: #218838;
+}
+
+#tagsList {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+#tagsList .tagButton {
+    margin: 5px;
+    padding: 5px 10px;
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#tagsList .tagButton:hover {
+    background-color: #5a6268;
+}
+
+input[type="checkbox"] {
+    margin-right: 10px;
+}
+tr.highlight {
+    background-color: #ffff99 !important;
+}

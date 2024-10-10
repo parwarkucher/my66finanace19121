@@ -48,6 +48,10 @@
             <button id="saveTagsBtn">Save Tags</button>
             <div id="tagsList"></div>
         </div>
+        <div id="tableEditButtons">
+            <button id="editTableBtn">Edit</button>
+            <button id="saveEditTableBtn">Save Edit</button>
+        </div>
         <div id="tableContainer"></div>
     </div>
     <script src="script.js"></script>
@@ -234,8 +238,6 @@
             document.getElementById('remainingMoneyIQD').textContent = remainingMoneyIQD.toFixed(2);
         }
 
-        // Call updatePageContent when the page loads
-        window.addEventListener('load', updatePageContent);
 
         // Also call updatePageContent after restoring data
         document.getElementById('restoreFileInput').addEventListener('change', function(event) {

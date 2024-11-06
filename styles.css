@@ -24,7 +24,7 @@ h1 {
     margin-bottom: 20px;
 }
 
-button {
+#uploadBtn, #analyzeBtn, #saveTagsBtn {
     margin-top: 10px;
     padding: 10px 20px;
     background-color: #007BFF;
@@ -32,28 +32,10 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    font-weight: bold;
-}
-
-button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-button:active {
-    transform: translateY(0);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-#uploadBtn, #analyzeBtn, #saveTagsBtn {
-    background-color: #28a745;
 }
 
 #uploadBtn:hover, #analyzeBtn:hover, #saveTagsBtn:hover {
-    background-color: #218838;
+    background-color: #0056b3;
 }
 
 #summaryContainer {
@@ -156,7 +138,4 @@ tr.highlight {
 
 input[type="checkbox"] {
     margin-right: 10px;
-}
-tr.highlight {
-    background-color: #ffff99 !important;
 }

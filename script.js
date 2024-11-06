@@ -165,51 +165,54 @@ document.addEventListener('DOMContentLoaded', function() {
             const reader = new FileReader();
 
             reader.onload = function(event) {
-                const csvData = event.target.result;
-                const rows = csvData.split('\n');
-                
-                // Validate CSV has content
-                if (!rows || rows.length === 0) {
-                    alert('CSV file appears to be empty');
-                    return;
-                }
+                try {
+                    const csvData = event.target.result;
+                    if (!csvData || typeof csvData !== 'string') {
+                        throw new Error('Invalid CSV data');
+                    }
 
-                // Get and validate headers
-                const headers = rows[0].split(',');
-                if (!headers || headers.length < 4) {  // Expecting at least Date,Type,Amount,Note
-                    alert('CSV file does not have the expected columns');
-                    return;
-                }
+                    const rows = csvData.split('\n').filter(row => row.trim());
+                    if (rows.length === 0) {
+                        throw new Error('CSV file appears to be empty');
+                    }
 
-                if (!table) {
-                    table = document.createElement('table');
-                    const headerRow = document.createElement('tr');
-                    headers.push('Tags'); // Add Tags column
-                    headers.forEach(headerText => {
-                        if (headerText) {  // Only add non-empty headers
-                            const header = document.createElement('th');
-                            header.textContent = headerText.trim();
-                            headerRow.appendChild(header);
+                    // Parse and validate headers
+                    const headers = rows[0].split(',').map(h => h.trim());
+                    if (!headers || headers.length < 4) {
+                        throw new Error('CSV file does not have the expected columns (Date, Type, Amount, Note)');
+                    }
+
+                    // Create table if it doesn't exist
+                    if (!table) {
+                        table = document.createElement('table');
+                        const headerRow = document.createElement('tr');
+                        [...headers, 'Tags'].forEach(headerText => {
+                            if (headerText) {
+                                const header = document.createElement('th');
+                                header.textContent = headerText;
+                                headerRow.appendChild(header);
+                            }
+                        });
+                        table.appendChild(headerRow);
+                    }
+
+                    // Process each data row
+                    for (let i = 1; i < rows.length; i++) {
+                        const rowData = rows[i].split(',').map(cell => cell.trim());
+                        
+                        // Skip rows with insufficient data
+                        if (!rowData || rowData.length < 4) {
+                            console.warn(`Skipping invalid row ${i + 1}: insufficient columns`);
+                            continue;
                         }
-                    });
-                    table.appendChild(headerRow);
-                }
 
-                for (let i = 1; i < rows.length; i++) {
-                    // Skip empty or whitespace-only rows
-                    const currentRow = rows[i].trim();
-                    if (!currentRow) continue;
-                
-                    // Split row and validate
-                    const rowData = currentRow.split(',');
-                    
-                    // Ensure we have all required columns and first column (date) exists
-                    if (rowData && 
-                        rowData.length >= 4 && 
-                        rowData[0] && 
-                        rowData[0].trim()) {
-                            
-                        const date = standardizeDate(rowData[0].trim());
+                        // Validate required fields
+                        if (!rowData[0] || !rowData[1] || !rowData[2] || !rowData[3]) {
+                            console.warn(`Skipping row ${i + 1}: missing required data`);
+                            continue;
+                        }
+
+                        const date = standardizeDate(rowData[0]);
                         const type = rowData[1].trim();
                         const amount = parseFloat(rowData[2]);
                         const note = rowData[3].trim();

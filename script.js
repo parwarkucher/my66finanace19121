@@ -103,57 +103,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add this function at the beginning of the script
     function standardizeDate(dateString) {
-        try {
-            // Clean the input string
-            dateString = dateString.trim();
-            
-            // First try direct parsing with explicit UTC handling
-            const date = new Date(dateString + 'Z');
-            if (!isNaN(date.getTime())) {
-                return date.toISOString().slice(0, 19).replace('T', ' ');
-            }
-            
-            // Try parsing common date formats
-            const formats = [
-                // YYYY-MM-DD
-                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
-                // DD/MM/YYYY
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
-                // MM/DD/YYYY
-                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
-            ];
-            
-            for (const format of formats) {
-                const parts = dateString.match(format);
-                if (parts) {
-                    let year, month, day;
-                    if (format.source.startsWith('^\\d{4}')) {
-                        // YYYY-MM-DD format
-                        [, year, month, day] = parts;
-                    } else {
-                        // DD/MM/YYYY or MM/DD/YYYY format
-                        [, day, month, year] = parts;
-                    }
-                    
-                    // Ensure proper padding of month and day
-                    month = month.padStart(2, '0');
-                    day = day.padStart(2, '0');
-                    
-                    // Create date in UTC to avoid timezone issues
-                    const utcDate = new Date(Date.UTC(year, parseInt(month) - 1, day));
-                    if (!isNaN(utcDate.getTime())) {
-                        return utcDate.toISOString().slice(0, 19).replace('T', ' ');
-                    }
-                }
-            }
-            
-            // If all parsing fails, return the original string
-            return dateString;
-        } catch (e) {
-            console.log('Date parsing error:', e);
-            // If any error occurs, return the original string
-            return dateString;
-        }
+        const date = new Date(dateString);
+        return date.toISOString().slice(0, 19).replace('T', ' ');
     }
 
     function uploadCSV(checkDuplicates) {
@@ -165,54 +116,26 @@ document.addEventListener('DOMContentLoaded', function() {
             const reader = new FileReader();
 
             reader.onload = function(event) {
-                try {
-                    const csvData = event.target.result;
-                    if (!csvData || typeof csvData !== 'string') {
-                        throw new Error('Invalid CSV data');
-                    }
+                const csvData = event.target.result;
+                const rows = csvData.split('\n');
+                
+                if (!table) {
+                    table = document.createElement('table');
+                    const headerRow = document.createElement('tr');
+                    const headers = rows[0].split(',');
+                    headers.push('Tags'); // Add Tags column
+                    headers.forEach(headerText => {
+                        const header = document.createElement('th');
+                        header.textContent = headerText.trim();
+                        headerRow.appendChild(header);
+                    });
+                    table.appendChild(headerRow);
+                }
 
-                    const rows = csvData.split('\n').filter(row => row.trim());
-                    if (rows.length === 0) {
-                        throw new Error('CSV file appears to be empty');
-                    }
-
-                    // Parse and validate headers
-                    const headers = rows[0].split(',').map(h => h.trim());
-                    if (!headers || headers.length < 4) {
-                        throw new Error('CSV file does not have the expected columns (Date, Type, Amount, Note)');
-                    }
-
-                    // Create table if it doesn't exist
-                    if (!table) {
-                        table = document.createElement('table');
-                        const headerRow = document.createElement('tr');
-                        [...headers, 'Tags'].forEach(headerText => {
-                            if (headerText) {
-                                const header = document.createElement('th');
-                                header.textContent = headerText;
-                                headerRow.appendChild(header);
-                            }
-                        });
-                        table.appendChild(headerRow);
-                    }
-
-                    // Process each data row
-                    for (let i = 1; i < rows.length; i++) {
-                        const rowData = rows[i].split(',').map(cell => cell.trim());
-                        
-                        // Skip rows with insufficient data
-                        if (!rowData || rowData.length < 4) {
-                            console.warn(`Skipping invalid row ${i + 1}: insufficient columns`);
-                            continue;
-                        }
-
-                        // Validate required fields
-                        if (!rowData[0] || !rowData[1] || !rowData[2] || !rowData[3]) {
-                            console.warn(`Skipping row ${i + 1}: missing required data`);
-                            continue;
-                        }
-
-                        const date = standardizeDate(rowData[0]);
+                for (let i = 1; i < rows.length; i++) {
+                    const rowData = rows[i].split(',');
+                    if (rowData.length === table.rows[0].cells.length - 1) {
+                        const date = standardizeDate(rowData[0].trim());
                         const type = rowData[1].trim();
                         const amount = parseFloat(rowData[2]);
                         const note = rowData[3].trim();
@@ -466,41 +389,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (index > 0) { // Skip header row
                 const checkboxes = row.querySelectorAll('input[type="checkbox"]');
                 const tagsCell = row.children[4]; // Tags column
-                const existingTags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
                 const newTags = Array.from(checkboxes)
                     .filter(checkbox => checkbox.checked)
                     .map(checkbox => checkbox.dataset.tag);
-            
-                // Combine existing tags with new tags, removing duplicates
-                const updatedTags = [...new Set([...existingTags, ...newTags])];
-                tagsCell.textContent = updatedTags.join(', ');
-            
-                // Update row styling
-                if (updatedTags.length > 0) {
-                    row.classList.add('highlight');
-                    const lastTag = updatedTags[updatedTags.length - 1];
-                    const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === lastTag);
-                    if (tagButton) {
-                        row.style.backgroundColor = tagButton.style.backgroundColor;
-                    }
-                } else {
-                    row.classList.remove('highlight');
-                    row.style.backgroundColor = '';
-                }
-            
+                tagsCell.textContent = newTags.join(', ');
+                
+                // Remove highlight class and background color from all rows
+                row.classList.remove('highlight');
+                row.style.backgroundColor = '';
+                
                 // Keep checkboxes for future editing
                 checkboxes.forEach(checkbox => {
                     checkbox.style.display = 'none';
                 });
-            }
-        });
-    
-        // Update dataRows array
-        dataRows.forEach((data, index) => {
-            const row = table.rows[index + 1]; // +1 to skip header row
-            if (row) {
-                const tagsCell = row.children[4];
-                data.tags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
             }
         });
     }
@@ -735,14 +636,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         ...row,
                         row: createRowElement(row)
                     }));
-                
+                    
                     // Restore tags
                     const tagsList = document.getElementById('tagsList');
                     tagsList.innerHTML = '';
                     data.tags.forEach(tag => {
                         createTagButton(tag.name, tag.color);
                     });
-                
+                    
                     // Restore savedChats
                     if (data.savedChats && typeof data.savedChats === 'object') {
                         localStorage.setItem('savedChats', JSON.stringify(data.savedChats));
@@ -750,28 +651,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         console.warn('No valid savedChats found in backup');
                     }
-                
+                    
                     // Redraw the table
                     redrawTable();
-                
+                    
                     // Recalculate totals
                     updateTotals();
-                
+                    
                     // Add event listeners to tag buttons
                     addTagButtonListeners();
-                
+                    
                     // Reattach event listeners for adding and saving tags
-                    document.getElementById('addTagBtn').removeEventListener('click', addNewTag);
-                    document.getElementById('saveTagsBtn').removeEventListener('click', saveTags);
                     document.getElementById('addTagBtn').addEventListener('click', addNewTag);
                     document.getElementById('saveTagsBtn').addEventListener('click', saveTags);
-                
-                    // Reattach event listeners for tag buttons
-                    document.querySelectorAll('.tagButton').forEach(button => {
-                        button.removeEventListener('click', toggleTag);
-                        button.addEventListener('click', () => toggleTag(button.textContent));
-                    });
-                
+                    
                     alert('Data restored successfully!');
                 } catch (error) {
                     console.error('Error restoring data:', error);
@@ -780,85 +673,6 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             reader.readAsText(file);
         }
-    }
-
-    function addNewTag() {
-        const newTag = document.getElementById('newTagInput').value.trim();
-        const tagColor = document.getElementById('tagColorPicker').value;
-        if (newTag) {
-            const tagButton = createTagButton(newTag, tagColor);
-        
-            // Automatically check/select rows containing the tag name
-            const rows = document.querySelectorAll('#tableContainer tr');
-            rows.forEach((row, index) => {
-                if (index > 0) { // Skip header row
-                    const noteCell = row.children[3]; // Note column
-                    const tagsCell = row.children[4]; // Tags column
-                    const noteContainsTag = noteCell.textContent.toLowerCase().includes(newTag.toLowerCase());
-                
-                    if (noteContainsTag) {
-                        let checkbox = row.querySelector(`input[type="checkbox"][data-tag="${newTag}"]`);
-                        if (!checkbox) {
-                            checkbox = document.createElement('input');
-                            checkbox.type = 'checkbox';
-                            checkbox.dataset.tag = newTag;
-                            checkbox.dataset.color = tagColor;
-                            checkbox.classList.add('tag-checkbox');
-                            row.appendChild(checkbox);
-                        }
-                        checkbox.checked = true;
-                        row.classList.add('highlight');
-                        row.style.backgroundColor = tagColor;
-                    }
-                }
-            });
-        
-            // Add event listener to the new tag button
-            tagButton.addEventListener('click', () => toggleTag(newTag));
-        
-            document.getElementById('newTagInput').value = '';
-        }
-    }
-
-    function toggleTag(tag) {
-        const rows = document.querySelectorAll('#tableContainer tr');
-        const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === tag);
-        const tagColor = tagButton ? tagButton.style.backgroundColor : '';
-
-        rows.forEach((row, index) => {
-            if (index > 0) { // Skip header row
-                const noteCell = row.children[3]; // Note column
-                const tagsCell = row.children[4]; // Tags column
-                const noteContainsTag = noteCell.textContent.toLowerCase().includes(tag.toLowerCase());
-                let checkbox = row.querySelector(`input[type="checkbox"][data-tag="${tag}"]`);
-            
-                if (!checkbox) {
-                    // Create new checkbox if it doesn't exist
-                    checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.dataset.tag = tag;
-                    checkbox.dataset.color = tagColor;
-                    checkbox.classList.add('tag-checkbox');
-                    row.appendChild(checkbox);
-                }
-            
-                // Set checkbox state based on whether the tag is in the tags column
-                const currentTags = tagsCell.textContent.split(', ').map(t => t.trim());
-                checkbox.checked = currentTags.includes(tag.trim());
-            
-                // Highlight row if checkbox is checked or note contains tag
-                if (checkbox.checked || noteContainsTag) {
-                    row.classList.add('highlight');
-                    row.style.backgroundColor = tagColor;
-                } else {
-                    row.classList.remove('highlight');
-                    row.style.backgroundColor = '';
-                }
-            
-                // Toggle checkbox visibility
-                checkbox.style.display = checkbox.style.display === 'none' ? 'inline' : 'none';
-            }
-        });
     }
 
     function createTagButton(name, color) {

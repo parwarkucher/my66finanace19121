@@ -34,10 +34,6 @@
             <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes Free</option>
             <option value="openai/o1-mini">o1 mini</option>
         </select>
-        <div>
-            <input type="checkbox" id="sendHistoryCheck">
-            <label for="sendHistoryCheck">Send chat history</label>
-        </div>
     </div>
     <div id="analysis"></div>
     <div id="chat-box">
@@ -296,7 +292,6 @@
             try {
                 const apiKey = document.getElementById('api-key').value.trim();
                 const selectedModel = document.getElementById('ai-model').value;
-                const sendHistory = document.getElementById('sendHistoryCheck').checked;
 
                 if (!apiKey) {
                     throw new Error("API key is missing");
@@ -322,13 +317,6 @@
                 // Add the financial data, additional information, and user message to the chat history
                 currentChat.push({ role: "user", content: content });
 
-                let messages;
-                if (sendHistory) {
-                    messages = currentChat;
-                } else {
-                    messages = [currentChat[0], currentChat[currentChat.length - 1]];
-                }
-
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -339,7 +327,7 @@
                     },
                     body: JSON.stringify({
                         model: selectedModel,
-                        messages: messages
+                        messages: currentChat.slice(0, -1).concat([{ role: "user", content: content }])
                     })
                 });
                 if (!response.ok) {

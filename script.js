@@ -168,26 +168,47 @@ document.addEventListener('DOMContentLoaded', function() {
                 const csvData = event.target.result;
                 const rows = csvData.split('\n');
                 
+                // Validate CSV has content
+                if (!rows || rows.length === 0) {
+                    alert('CSV file appears to be empty');
+                    return;
+                }
+
+                // Get and validate headers
+                const headers = rows[0].split(',');
+                if (!headers || headers.length < 4) {  // Expecting at least Date,Type,Amount,Note
+                    alert('CSV file does not have the expected columns');
+                    return;
+                }
+
                 if (!table) {
                     table = document.createElement('table');
                     const headerRow = document.createElement('tr');
-                    const headers = rows[0].split(',');
                     headers.push('Tags'); // Add Tags column
                     headers.forEach(headerText => {
-                        const header = document.createElement('th');
-                        header.textContent = headerText.trim();
-                        headerRow.appendChild(header);
+                        if (headerText) {  // Only add non-empty headers
+                            const header = document.createElement('th');
+                            header.textContent = headerText.trim();
+                            headerRow.appendChild(header);
+                        }
                     });
                     table.appendChild(headerRow);
                 }
 
                 for (let i = 1; i < rows.length; i++) {
-                    // Skip empty rows
-                    if (!rows[i].trim()) continue;
+                    // Skip empty or whitespace-only rows
+                    const currentRow = rows[i].trim();
+                    if (!currentRow) continue;
                 
-                    const rowData = rows[i].split(',');
-                    // Skip rows with insufficient data or empty first column
-                    if (rowData.length === table.rows[0].cells.length - 1 && rowData[0] && rowData[0].trim()) {
+                    // Split row and validate
+                    const rowData = currentRow.split(',');
+                    
+                    // Ensure we have all required columns and first column (date) exists
+                    if (rowData && 
+                        rowData.length >= 4 && 
+                        rowData[0] && 
+                        rowData[0].trim()) {
+                            
                         const date = standardizeDate(rowData[0].trim());
                         const type = rowData[1].trim();
                         const amount = parseFloat(rowData[2]);

@@ -104,34 +104,53 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add this function at the beginning of the script
     function standardizeDate(dateString) {
         try {
-            // First try direct parsing
-            const date = new Date(dateString);
+            // Clean the input string
+            dateString = dateString.trim();
+            
+            // First try direct parsing with explicit UTC handling
+            const date = new Date(dateString + 'Z');
             if (!isNaN(date.getTime())) {
                 return date.toISOString().slice(0, 19).replace('T', ' ');
             }
             
-            // If that fails, try manual parsing
-            const parts = dateString.split(/[-/]/);
-            if (parts.length === 3) {
-                // Assume year is either first or last
-                let year, month, day;
-                if (parts[0].length === 4) {
-                    // YYYY-MM-DD format
-                    [year, month, day] = parts;
-                } else {
-                    // DD/MM/YYYY format
-                    [day, month, year] = parts;
-                }
-                
-                const parsedDate = new Date(year, parseInt(month) - 1, day);
-                if (!isNaN(parsedDate.getTime())) {
-                    return parsedDate.toISOString().slice(0, 19).replace('T', ' ');
+            // Try parsing common date formats
+            const formats = [
+                // YYYY-MM-DD
+                /^(\d{4})-(\d{1,2})-(\d{1,2})$/,
+                // DD/MM/YYYY
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/,
+                // MM/DD/YYYY
+                /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+            ];
+            
+            for (const format of formats) {
+                const parts = dateString.match(format);
+                if (parts) {
+                    let year, month, day;
+                    if (format.source.startsWith('^\\d{4}')) {
+                        // YYYY-MM-DD format
+                        [, year, month, day] = parts;
+                    } else {
+                        // DD/MM/YYYY or MM/DD/YYYY format
+                        [, day, month, year] = parts;
+                    }
+                    
+                    // Ensure proper padding of month and day
+                    month = month.padStart(2, '0');
+                    day = day.padStart(2, '0');
+                    
+                    // Create date in UTC to avoid timezone issues
+                    const utcDate = new Date(Date.UTC(year, parseInt(month) - 1, day));
+                    if (!isNaN(utcDate.getTime())) {
+                        return utcDate.toISOString().slice(0, 19).replace('T', ' ');
+                    }
                 }
             }
             
             // If all parsing fails, return the original string
             return dateString;
         } catch (e) {
+            console.log('Date parsing error:', e);
             // If any error occurs, return the original string
             return dateString;
         }

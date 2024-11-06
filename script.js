@@ -1031,3 +1031,4 @@ function redrawTable() {
     
     tableContainer.appendChild(table);
 }
+});

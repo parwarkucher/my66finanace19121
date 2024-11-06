@@ -103,8 +103,38 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add this function at the beginning of the script
     function standardizeDate(dateString) {
-        const date = new Date(dateString);
-        return date.toISOString().slice(0, 19).replace('T', ' ');
+        try {
+            // First try direct parsing
+            const date = new Date(dateString);
+            if (!isNaN(date.getTime())) {
+                return date.toISOString().slice(0, 19).replace('T', ' ');
+            }
+            
+            // If that fails, try manual parsing
+            const parts = dateString.split(/[-/]/);
+            if (parts.length === 3) {
+                // Assume year is either first or last
+                let year, month, day;
+                if (parts[0].length === 4) {
+                    // YYYY-MM-DD format
+                    [year, month, day] = parts;
+                } else {
+                    // DD/MM/YYYY format
+                    [day, month, year] = parts;
+                }
+                
+                const parsedDate = new Date(year, parseInt(month) - 1, day);
+                if (!isNaN(parsedDate.getTime())) {
+                    return parsedDate.toISOString().slice(0, 19).replace('T', ' ');
+                }
+            }
+            
+            // If all parsing fails, return the original string
+            return dateString;
+        } catch (e) {
+            // If any error occurs, return the original string
+            return dateString;
+        }
     }
 
     function uploadCSV(checkDuplicates) {
@@ -389,19 +419,41 @@ document.addEventListener('DOMContentLoaded', function() {
             if (index > 0) { // Skip header row
                 const checkboxes = row.querySelectorAll('input[type="checkbox"]');
                 const tagsCell = row.children[4]; // Tags column
+                const existingTags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
                 const newTags = Array.from(checkboxes)
                     .filter(checkbox => checkbox.checked)
                     .map(checkbox => checkbox.dataset.tag);
-                tagsCell.textContent = newTags.join(', ');
-                
-                // Remove highlight class and background color from all rows
-                row.classList.remove('highlight');
-                row.style.backgroundColor = '';
-                
+            
+                // Combine existing tags with new tags, removing duplicates
+                const updatedTags = [...new Set([...existingTags, ...newTags])];
+                tagsCell.textContent = updatedTags.join(', ');
+            
+                // Update row styling
+                if (updatedTags.length > 0) {
+                    row.classList.add('highlight');
+                    const lastTag = updatedTags[updatedTags.length - 1];
+                    const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === lastTag);
+                    if (tagButton) {
+                        row.style.backgroundColor = tagButton.style.backgroundColor;
+                    }
+                } else {
+                    row.classList.remove('highlight');
+                    row.style.backgroundColor = '';
+                }
+            
                 // Keep checkboxes for future editing
                 checkboxes.forEach(checkbox => {
                     checkbox.style.display = 'none';
                 });
+            }
+        });
+    
+        // Update dataRows array
+        dataRows.forEach((data, index) => {
+            const row = table.rows[index + 1]; // +1 to skip header row
+            if (row) {
+                const tagsCell = row.children[4];
+                data.tags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
             }
         });
     }
@@ -636,14 +688,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         ...row,
                         row: createRowElement(row)
                     }));
-                    
+                
                     // Restore tags
                     const tagsList = document.getElementById('tagsList');
                     tagsList.innerHTML = '';
                     data.tags.forEach(tag => {
                         createTagButton(tag.name, tag.color);
                     });
-                    
+                
                     // Restore savedChats
                     if (data.savedChats && typeof data.savedChats === 'object') {
                         localStorage.setItem('savedChats', JSON.stringify(data.savedChats));
@@ -651,20 +703,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         console.warn('No valid savedChats found in backup');
                     }
-                    
+                
                     // Redraw the table
                     redrawTable();
-                    
+                
                     // Recalculate totals
                     updateTotals();
-                    
+                
                     // Add event listeners to tag buttons
                     addTagButtonListeners();
-                    
+                
                     // Reattach event listeners for adding and saving tags
+                    document.getElementById('addTagBtn').removeEventListener('click', addNewTag);
+                    document.getElementById('saveTagsBtn').removeEventListener('click', saveTags);
                     document.getElementById('addTagBtn').addEventListener('click', addNewTag);
                     document.getElementById('saveTagsBtn').addEventListener('click', saveTags);
-                    
+                
+                    // Reattach event listeners for tag buttons
+                    document.querySelectorAll('.tagButton').forEach(button => {
+                        button.removeEventListener('click', toggleTag);
+                        button.addEventListener('click', () => toggleTag(button.textContent));
+                    });
+                
                     alert('Data restored successfully!');
                 } catch (error) {
                     console.error('Error restoring data:', error);
@@ -673,6 +733,85 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             reader.readAsText(file);
         }
+    }
+
+    function addNewTag() {
+        const newTag = document.getElementById('newTagInput').value.trim();
+        const tagColor = document.getElementById('tagColorPicker').value;
+        if (newTag) {
+            const tagButton = createTagButton(newTag, tagColor);
+        
+            // Automatically check/select rows containing the tag name
+            const rows = document.querySelectorAll('#tableContainer tr');
+            rows.forEach((row, index) => {
+                if (index > 0) { // Skip header row
+                    const noteCell = row.children[3]; // Note column
+                    const tagsCell = row.children[4]; // Tags column
+                    const noteContainsTag = noteCell.textContent.toLowerCase().includes(newTag.toLowerCase());
+                
+                    if (noteContainsTag) {
+                        let checkbox = row.querySelector(`input[type="checkbox"][data-tag="${newTag}"]`);
+                        if (!checkbox) {
+                            checkbox = document.createElement('input');
+                            checkbox.type = 'checkbox';
+                            checkbox.dataset.tag = newTag;
+                            checkbox.dataset.color = tagColor;
+                            checkbox.classList.add('tag-checkbox');
+                            row.appendChild(checkbox);
+                        }
+                        checkbox.checked = true;
+                        row.classList.add('highlight');
+                        row.style.backgroundColor = tagColor;
+                    }
+                }
+            });
+        
+            // Add event listener to the new tag button
+            tagButton.addEventListener('click', () => toggleTag(newTag));
+        
+            document.getElementById('newTagInput').value = '';
+        }
+    }
+
+    function toggleTag(tag) {
+        const rows = document.querySelectorAll('#tableContainer tr');
+        const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === tag);
+        const tagColor = tagButton ? tagButton.style.backgroundColor : '';
+
+        rows.forEach((row, index) => {
+            if (index > 0) { // Skip header row
+                const noteCell = row.children[3]; // Note column
+                const tagsCell = row.children[4]; // Tags column
+                const noteContainsTag = noteCell.textContent.toLowerCase().includes(tag.toLowerCase());
+                let checkbox = row.querySelector(`input[type="checkbox"][data-tag="${tag}"]`);
+            
+                if (!checkbox) {
+                    // Create new checkbox if it doesn't exist
+                    checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.dataset.tag = tag;
+                    checkbox.dataset.color = tagColor;
+                    checkbox.classList.add('tag-checkbox');
+                    row.appendChild(checkbox);
+                }
+            
+                // Set checkbox state based on whether the tag is in the tags column
+                const currentTags = tagsCell.textContent.split(', ').map(t => t.trim());
+                checkbox.checked = currentTags.includes(tag.trim());
+            
+                // Highlight row if checkbox is checked or note contains tag
+                if (checkbox.checked || noteContainsTag) {
+                    row.classList.add('highlight');
+                    row.style.backgroundColor = tagColor;
+                } else {
+                    row.classList.remove('highlight');
+                    row.style.backgroundColor = '';
+                }
+            
+                // Toggle checkbox visibility
+                checkbox.style.display = checkbox.style.display === 'none' ? 'inline' : 'none';
+            }
+        });
     }
 
     function createTagButton(name, color) {

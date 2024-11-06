@@ -182,8 +182,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 for (let i = 1; i < rows.length; i++) {
+                    // Skip empty rows
+                    if (!rows[i].trim()) continue;
+                
                     const rowData = rows[i].split(',');
-                    // Skip empty rows or rows with insufficient data
+                    // Skip rows with insufficient data or empty first column
                     if (rowData.length === table.rows[0].cells.length - 1 && rowData[0] && rowData[0].trim()) {
                         const date = standardizeDate(rowData[0].trim());
                         const type = rowData[1].trim();

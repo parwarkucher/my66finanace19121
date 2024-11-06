@@ -183,7 +183,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 for (let i = 1; i < rows.length; i++) {
                     const rowData = rows[i].split(',');
-                    if (rowData.length === table.rows[0].cells.length - 1) {
+                    // Skip empty rows or rows with insufficient data
+                    if (rowData.length === table.rows[0].cells.length - 1 && rowData[0] && rowData[0].trim()) {
                         const date = standardizeDate(rowData[0].trim());
                         const type = rowData[1].trim();
                         const amount = parseFloat(rowData[2]);

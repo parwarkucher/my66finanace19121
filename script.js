@@ -1,6 +1,7 @@
+let dataRows = [];
+let table;
+
 document.addEventListener('DOMContentLoaded', function() {
-    let dataRows = [];
-    let table;
     // Initialize sort button listener
     const sortBtn = document.getElementById('sortBtn');
     if (sortBtn) {
@@ -110,18 +111,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const fileInput = document.getElementById('csvFileInput');
         const tableContainer = document.getElementById('tableContainer');
 
-        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-            alert('Please select a CSV file to upload.');
-            return;
-        }
-        
-        const file = fileInput.files[0];
-        if (!file.name.toLowerCase().endsWith('.csv')) {
-            alert('Please select a valid CSV file.');
-            return;
-        }
-
-        const reader = new FileReader();
+        if (fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
 
             reader.onload = function(event) {
                 const csvData = event.target.result;
@@ -203,19 +195,16 @@ document.addEventListener('DOMContentLoaded', function() {
             };
 
             reader.readAsText(file);
+        } else {
+            alert('Please select a CSV file to upload.');
+        }
     }
 
-    // Update existing data rows if any exist
-    if (dataRows.length > 0) {
-        dataRows.forEach(row => {
-            if (row && row.date) {
-                row.date = standardizeDate(row.date);
-                if (row.row && row.row.cells && row.row.cells.length > 0) {
-                    row.row.cells[0].textContent = row.date;
-                }
-            }
-        });
-    }
+    // Update existing data rows
+    dataRows.forEach(row => {
+        row.date = standardizeDate(row.date);
+        row.row.cells[0].textContent = row.date;
+    });
 
     function updateTotals() {
         let total = 0;
@@ -894,7 +883,9 @@ function updateRemainingMoney() {
     
     // Call this function initially to set the correct USD value
     updateRemainingMoney();
-    function makeTableEditable() {
+}); // Close the DOMContentLoaded event listener
+
+function makeTableEditable() {
     const table = document.querySelector('#tableContainer table');
     if (table) {
         const rows = table.querySelectorAll('tr');
@@ -1031,4 +1022,3 @@ function redrawTable() {
     
     tableContainer.appendChild(table);
 }
-});

@@ -1,576 +1,637 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Financial Analyzer</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .container {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            width: 95%;
-            max-width: 1200px;
-            margin: 20px auto;
-        }
-        h1, h2, h3 {
-            color: #333;
-            margin-bottom: 20px;
-        }
-        h1 {
-            font-size: 28px;
-            border-bottom: 2px solid #4CAF50;
-            padding-bottom: 10px;
-        }
-        h2 {
-            font-size: 24px;
-            margin-top: 30px;
-        }
-        #totalGraphContainer, #graphContainer, #tagGraphContainer {
-            flex: 1;
-            min-height: 300px;
-            margin-bottom: 30px;
-            position: relative;
-        }
-        #notesContainer {
-            background-color: #e9f5e9;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 20px;
-        }
-        #notesContent {
-            font-size: 16px;
-            line-height: 1.5;
-        }
-        #noTagsMessage {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 18px;
-            color: #666;
-        }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .container {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        width: 95%;
+        max-width: 1200px;
+        margin: 20px auto;
+      }
+      h1,
+      h2,
+      h3 {
+        color: #333;
+        margin-bottom: 20px;
+      }
+      h1 {
+        font-size: 28px;
+        border-bottom: 2px solid #4caf50;
+        padding-bottom: 10px;
+      }
+      h2 {
+        font-size: 24px;
+        margin-top: 30px;
+      }
+      #totalGraphContainer,
+      #graphContainer,
+      #tagGraphContainer {
+        flex: 1;
+        min-height: 300px;
+        margin-bottom: 30px;
+        position: relative;
+      }
+      #notesContainer {
+        background-color: #e9f5e9;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+      }
+      #notesContent {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      #noTagsMessage {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 18px;
+        color: #666;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h1>Financial Analysis</h1>
-        <div id="totalGraphContainer">
-            <canvas id="totalFinancialChart"></canvas>
-        </div>
-        <div id="graphContainer">
-            <canvas id="financialChart"></canvas>
-        </div>
-        <div id="notesContainer" style="margin-top: 20px; padding: 10px; background-color: #f0f0f0; border-radius: 5px;">
-            <h3>Notes:</h3>
-            <p id="notesContent"></p>
-        </div>
-        <h2>Tag Analysis</h2>
-        <div id="tagGraphContainer">
-            <canvas id="tagAnalysisChart"></canvas>
-        </div>
-        <div id="noTagsMessage" style="display: none; text-align: center; margin-top: 20px;">
-            No tags found in the data.
-        </div>
+      <h1>Financial Analysis</h1>
+      <div id="totalGraphContainer">
+        <canvas id="totalFinancialChart"></canvas>
+      </div>
+      <div id="graphContainer">
+        <canvas id="financialChart"></canvas>
+      </div>
+      <div
+        id="notesContainer"
+        style="
+          margin-top: 20px;
+          padding: 10px;
+          background-color: #f0f0f0;
+          border-radius: 5px;
+        "
+      >
+        <h3>Notes:</h3>
+        <p id="notesContent"></p>
+      </div>
+      <h2>Tag Analysis</h2>
+      <div id="tagGraphContainer">
+        <canvas id="tagAnalysisChart"></canvas>
+      </div>
+      <div
+        id="noTagsMessage"
+        style="display: none; text-align: center; margin-top: 20px"
+      >
+        No tags found in the data.
+      </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script>
-        console.log('Chart.js loaded successfully');
+      console.log('Chart.js loaded successfully');
 
-        window.addEventListener('message', function(event) {
-            const data = event.data;
-            console.log('Received data:', data);
+      window.addEventListener('message', function (event) {
+        const data = event.data;
+        console.log('Received data:', data);
 
-            // Prepare data for Total Financial Chart
-            let totalIncome = 0;
-            let totalExpense = 0;
-            data.rows.forEach(row => {
-                const amount = parseFloat(row[2]);
-                const isIncome = row[1].includes('Income');
-                if (isIncome) {
-                    totalIncome += amount;
-                } else {
-                    totalExpense += amount;
-                }
-            });
-
-            const totalFinancialData = {
-                labels: ['Total Income', 'Total Expense'],
-                datasets: [{
-                    data: [totalIncome, totalExpense],
-                    backgroundColor: ['rgba(75, 192, 192, 0.6)', 'rgba(255, 99, 132, 0.6)'],
-                    borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
-                    borderWidth: 1
-                }]
-            };
-
-            // Create Total Financial Chart
-            const totalFinancialCtx = document.getElementById('totalFinancialChart').getContext('2d');
-            const totalFinancialChart = new Chart(totalFinancialCtx, {
-                type: 'bar',
-                data: totalFinancialData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Amount (IQD)',
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 50);
-                                    },
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return formatNumberWithCommas(value) + ' IQD';
-                                },
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 60);
-                                    }
-                                }
-                            }
-                        },
-                        x: {
-                            ticks: {
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 60);
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += formatNumberWithCommas(context.parsed.y.toFixed(2)) + ' IQD';
-                                    }
-                                    return label;
-                                }
-                            },
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Total Income vs Total Expense',
-                            font: {
-                                size: 20,
-                                weight: 'bold'
-                            },
-                            padding: {
-                                top: 10,
-                                bottom: 30
-                            }
-                        },
-                        legend: {
-                            display: false
-                        }
-                    },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 10,
-                            top: 0,
-                            bottom: 0
-                        }
-                    }
-                }
-            });
-
-            // Prepare data for Financial Chart
-            const monthlyData = {};
-            data.rows.forEach(row => {
-                const date = new Date(row[0]);
-                const month = date.toLocaleString('default', { month: 'long', year: 'numeric' });
-                const amount = parseFloat(row[2]);
-                const isIncome = row[1].includes('Income');
-
-                if (!monthlyData[month]) {
-                    monthlyData[month] = { income: 0, expense: 0 };
-                }
-
-                if (isIncome) {
-                    monthlyData[month].income += amount;
-                } else {
-                    monthlyData[month].expense += amount;
-                }
-            });
-
-            const months = Object.keys(monthlyData);
-            const incomes = months.map(month => monthlyData[month].income);
-            const expenses = months.map(month => monthlyData[month].expense);
-
-            const financialData = {
-                labels: months,
-                datasets: [
-                    {
-                        label: 'Income (IQD)',
-                        data: incomes,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Expense (IQD)',
-                        data: expenses,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            };
-
-            // Create Financial Chart
-            const financialCtx = document.getElementById('financialChart').getContext('2d');
-            const financialChart = new Chart(financialCtx, {
-                type: 'bar',
-                data: financialData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Month',
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 50);
-                                    },
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 60);
-                                    }
-                                }
-                            }
-                        },
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Amount (IQD)',
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 50);
-                                    },
-                                    weight: 'bold'
-                                }
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return formatNumberWithCommas(value) + ' IQD';
-                                },
-                                font: {
-                                    size: function(context) {
-                                        var width = context.chart.width;
-                                        return Math.round(width / 60);
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed.y !== null) {
-                                        label += formatNumberWithCommas(context.parsed.y.toFixed(2)) + ' IQD';
-                                    }
-                                    return label;
-                                }
-                            },
-                            titleFont: {
-                                size: 14
-                            },
-                            bodyFont: {
-                                size: 12
-                            }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Monthly Financial Overview',
-                            font: {
-                                size: 20,
-                                weight: 'bold'
-                            },
-                            padding: {
-                                top: 10,
-                                bottom: 30
-                            }
-                        },
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                font: {
-                                    size: 12
-                                },
-                                padding: 20
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: {
-                            left: 10,
-                            right: 10,
-                            top: 0,
-                            bottom: 0
-                        }
-                    },
-                    onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                            const clickedElement = elements[0];
-                            const index = clickedElement.index;
-                            const month = months[index];
-                            const income = incomes[index];
-                            const expense = expenses[index];
-
-                            document.getElementById('notesContent').innerHTML = `
-                                <strong>${month}</strong><br>
-                                Income: ${formatNumberWithCommas(income.toFixed(2))} IQD<br>
-                                Expense: ${formatNumberWithCommas(expense.toFixed(2))} IQD<br>
-                                Net: ${formatNumberWithCommas((income - expense).toFixed(2))} IQD
-                            `;
-
-                            // Send message to parent window
-                            window.opener.postMessage({ action: 'highlightMonthlyRows', month: month }, '*');
-                        }
-                    }
-                }
-            });
-
-            // Prepare data for Tag Analysis Chart
-            const tagData = {};
-            data.rows.forEach(row => {
-                const amount = parseFloat(row[2]);
-                const tags = row[4].split(', ').filter(tag => tag.trim() !== '');
-                const isIncome = row[1].includes('Income');
-                
-                tags.forEach(tag => {
-                    if (!tagData[tag]) {
-                        tagData[tag] = { income: 0, expense: 0 };
-                    }
-                    if (isIncome) {
-                        tagData[tag].income += amount;
-                    } else {
-                        tagData[tag].expense += amount;
-                    }
-                });
-            });
-
-            const tagLabels = Object.keys(tagData);
-            const tagAnalysisData = {
-                labels: tagLabels,
-                datasets: [
-                    {
-                        label: 'Income (IQD)',
-                        data: tagLabels.map(tag => tagData[tag].income > 0 ? tagData[tag].income : null),
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Expense (IQD)',
-                        data: tagLabels.map(tag => tagData[tag].expense > 0 ? tagData[tag].expense : null),
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }
-                ]
-            };
-
-            const graphContainer = document.getElementById('graphContainer');
-            const noTagsMessage = document.getElementById('noTagsMessage');
-
-            if (tagLabels.length > 0) {
-                graphContainer.style.display = 'block';
-                noTagsMessage.style.display = 'none';
-
-                // Get the context of the canvas element
-                const tagAnalysisCtx = document.getElementById('tagAnalysisChart').getContext('2d');
-                console.log('Tag Analysis Chart context:', tagAnalysisCtx);
-
-                // Create the chart
-                new Chart(tagAnalysisCtx, {
-                    type: 'bar',
-                    data: tagAnalysisData,
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            x: {
-                                stacked: false,
-                                title: {
-                                    display: true,
-                                    text: 'Tags',
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Amount (IQD)',
-                                    font: {
-                                        size: 14,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return formatNumberWithCommas(value) + ' IQD';
-                                    },
-                                    font: {
-                                        size: 12
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += formatNumberWithCommas(context.parsed.y.toFixed(2)) + ' IQD';
-                                        }
-                                        return label;
-                                    }
-                                },
-                                titleFont: {
-                                    size: 14
-                                },
-                                bodyFont: {
-                                    size: 12
-                                }
-                            },
-                            title: {
-                                display: true,
-                                text: 'Tag Analysis',
-                                font: {
-                                    size: 20,
-                                    weight: 'bold'
-                                },
-                                padding: {
-                                    top: 10,
-                                    bottom: 30
-                                }
-                            },
-                            legend: {
-                                position: 'top',
-                                labels: {
-                                    font: {
-                                        size: 12
-                                    },
-                                    padding: 20
-                                }
-                            }
-                        },
-                        parsing: {
-                            yAxisKey: 'y'
-                        },
-                        skipNull: true,
-                        layout: {
-                            padding: {
-                                left: 10,
-                                right: 10,
-                                top: 0,
-                                bottom: 0
-                            }
-                        },
-                        onClick: (event, elements) => {
-                            if (elements.length > 0) {
-                                const clickedElement = elements[0];
-                                const datasetIndex = clickedElement.datasetIndex;
-                                const index = clickedElement.index;
-                                
-                                // Reset all bars to their original color
-                                tagAnalysisChart.data.datasets.forEach((dataset, i) => {
-                                    dataset.backgroundColor = i === 0 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)';
-                                });
-                                
-                                // Highlight the clicked bar
-                                tagAnalysisChart.data.datasets[datasetIndex].backgroundColor = tagAnalysisChart.data.datasets[datasetIndex].backgroundColor.map((color, i) => 
-                                    i === index ? 'rgba(255, 255, 0, 0.8)' : color
-                                );
-                                
-                                tagAnalysisChart.update();
-
-                                // Send message to parent window
-                                const clickedTag = tagLabels[index];
-                                const clickedType = datasetIndex === 0 ? 'Income' : 'Expense';
-                                window.opener.postMessage({ action: 'highlightRows', tag: clickedTag, type: clickedType }, '*');
-                            }
-                        }
-                    }
-                });
-                console.log('Tag Analysis Chart created successfully');
-                
-                // Store the chart instance in a variable
-                window.tagAnalysisChart = tagAnalysisChart;
-            } else {
-                graphContainer.style.display = 'none';
-                noTagsMessage.style.display = 'block';
-                console.log('No tags found in the data');
-            }
+        // Prepare data for Total Financial Chart
+        let totalIncome = 0;
+        let totalExpense = 0;
+        data.rows.forEach((row) => {
+          const amount = parseFloat(row[2]);
+          const isIncome = row[1].includes('Income');
+          if (isIncome) {
+            totalIncome += amount;
+          } else {
+            totalExpense += amount;
+          }
         });
 
-        function formatNumberWithCommas(number) {
-            return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        const totalFinancialData = {
+          labels: ['Total Income', 'Total Expense'],
+          datasets: [
+            {
+              data: [totalIncome, totalExpense],
+              backgroundColor: [
+                'rgba(75, 192, 192, 0.6)',
+                'rgba(255, 99, 132, 0.6)'
+              ],
+              borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 99, 132, 1)'],
+              borderWidth: 1
+            }
+          ]
+        };
+
+        // Create Total Financial Chart
+        const totalFinancialCtx = document
+          .getElementById('totalFinancialChart')
+          .getContext('2d');
+        const totalFinancialChart = new Chart(totalFinancialCtx, {
+          type: 'bar',
+          data: totalFinancialData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Amount (IQD)',
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 50);
+                    },
+                    weight: 'bold'
+                  }
+                },
+                ticks: {
+                  callback: function (value) {
+                    return formatNumberWithCommas(value) + ' IQD';
+                  },
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 60);
+                    }
+                  }
+                }
+              },
+              x: {
+                ticks: {
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 60);
+                    }
+                  }
+                }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    let label = context.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label +=
+                        formatNumberWithCommas(context.parsed.y.toFixed(2)) +
+                        ' IQD';
+                    }
+                    return label;
+                  }
+                },
+                titleFont: {
+                  size: 14
+                },
+                bodyFont: {
+                  size: 12
+                }
+              },
+              title: {
+                display: true,
+                text: 'Total Income vs Total Expense',
+                font: {
+                  size: 20,
+                  weight: 'bold'
+                },
+                padding: {
+                  top: 10,
+                  bottom: 30
+                }
+              },
+              legend: {
+                display: false
+              }
+            },
+            layout: {
+              padding: {
+                left: 10,
+                right: 10,
+                top: 0,
+                bottom: 0
+              }
+            }
+          }
+        });
+
+        // Prepare data for Financial Chart
+        const monthlyData = {};
+        data.rows.forEach((row) => {
+          const date = new Date(row[0]);
+          const month = date.toLocaleString('default', {
+            month: 'long',
+            year: 'numeric'
+          });
+          const amount = parseFloat(row[2]);
+          const isIncome = row[1].includes('Income');
+
+          if (!monthlyData[month]) {
+            monthlyData[month] = { income: 0, expense: 0 };
+          }
+
+          if (isIncome) {
+            monthlyData[month].income += amount;
+          } else {
+            monthlyData[month].expense += amount;
+          }
+        });
+
+        const months = Object.keys(monthlyData);
+        const incomes = months.map((month) => monthlyData[month].income);
+        const expenses = months.map((month) => monthlyData[month].expense);
+
+        const financialData = {
+          labels: months,
+          datasets: [
+            {
+              label: 'Income (IQD)',
+              data: incomes,
+              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Expense (IQD)',
+              data: expenses,
+              backgroundColor: 'rgba(255, 99, 132, 0.6)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
+            }
+          ]
+        };
+
+        // Create Financial Chart
+        const financialCtx = document
+          .getElementById('financialChart')
+          .getContext('2d');
+        const financialChart = new Chart(financialCtx, {
+          type: 'bar',
+          data: financialData,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              x: {
+                title: {
+                  display: true,
+                  text: 'Month',
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 50);
+                    },
+                    weight: 'bold'
+                  }
+                },
+                ticks: {
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 60);
+                    }
+                  }
+                }
+              },
+              y: {
+                beginAtZero: true,
+                title: {
+                  display: true,
+                  text: 'Amount (IQD)',
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 50);
+                    },
+                    weight: 'bold'
+                  }
+                },
+                ticks: {
+                  callback: function (value) {
+                    return formatNumberWithCommas(value) + ' IQD';
+                  },
+                  font: {
+                    size: function (context) {
+                      var width = context.chart.width;
+                      return Math.round(width / 60);
+                    }
+                  }
+                }
+              }
+            },
+            plugins: {
+              tooltip: {
+                callbacks: {
+                  label: function (context) {
+                    let label = context.dataset.label || '';
+                    if (label) {
+                      label += ': ';
+                    }
+                    if (context.parsed.y !== null) {
+                      label +=
+                        formatNumberWithCommas(context.parsed.y.toFixed(2)) +
+                        ' IQD';
+                    }
+                    return label;
+                  }
+                },
+                titleFont: {
+                  size: 14
+                },
+                bodyFont: {
+                  size: 12
+                }
+              },
+              title: {
+                display: true,
+                text: 'Monthly Financial Overview',
+                font: {
+                  size: 20,
+                  weight: 'bold'
+                },
+                padding: {
+                  top: 10,
+                  bottom: 30
+                }
+              },
+              legend: {
+                position: 'top',
+                labels: {
+                  font: {
+                    size: 12
+                  },
+                  padding: 20
+                }
+              }
+            },
+            layout: {
+              padding: {
+                left: 10,
+                right: 10,
+                top: 0,
+                bottom: 0
+              }
+            },
+            onClick: (event, elements) => {
+              if (elements.length > 0) {
+                const clickedElement = elements[0];
+                const index = clickedElement.index;
+                const month = months[index];
+                const income = incomes[index];
+                const expense = expenses[index];
+
+                document.getElementById('notesContent').innerHTML = `
+                                <strong>${month}</strong><br>
+                                Income: ${formatNumberWithCommas(
+                                  income.toFixed(2)
+                                )} IQD<br>
+                                Expense: ${formatNumberWithCommas(
+                                  expense.toFixed(2)
+                                )} IQD<br>
+                                Net: ${formatNumberWithCommas(
+                                  (income - expense).toFixed(2)
+                                )} IQD
+                            `;
+
+                // Send message to parent window
+                window.opener.postMessage(
+                  { action: 'highlightMonthlyRows', month: month },
+                  '*'
+                );
+              }
+            }
+          }
+        });
+
+        // Prepare data for Tag Analysis Chart
+        const tagData = {};
+        data.rows.forEach((row) => {
+          const amount = parseFloat(row[2]);
+          const tags = row[4].split(',').filter((tag) => tag.trim() !== '');
+          const isIncome = row[1].includes('Income');
+
+          tags.forEach((tag) => {
+            if (!tagData[tag]) {
+              tagData[tag] = { income: 0, expense: 0 };
+            }
+            if (isIncome) {
+              tagData[tag].income += amount;
+            } else {
+              tagData[tag].expense += amount;
+            }
+          });
+        });
+
+        const tagLabels = Object.keys(tagData);
+        const tagAnalysisData = {
+          labels: tagLabels,
+          datasets: [
+            {
+              label: 'Income (IQD)',
+              data: tagLabels.map((tag) =>
+                tagData[tag].income > 0 ? tagData[tag].income : null
+              ),
+              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Expense (IQD)',
+              data: tagLabels.map((tag) =>
+                tagData[tag].expense > 0 ? tagData[tag].expense : null
+              ),
+              backgroundColor: 'rgba(255, 99, 132, 0.6)',
+              borderColor: 'rgba(255, 99, 132, 1)',
+              borderWidth: 1
+            }
+          ]
+        };
+
+        const graphContainer = document.getElementById('graphContainer');
+        const noTagsMessage = document.getElementById('noTagsMessage');
+
+        if (tagLabels.length > 0) {
+          graphContainer.style.display = 'block';
+          noTagsMessage.style.display = 'none';
+
+          // Get the context of the canvas element
+          const tagAnalysisCtx = document
+            .getElementById('tagAnalysisChart')
+            .getContext('2d');
+          console.log('Tag Analysis Chart context:', tagAnalysisCtx);
+
+          // Create the chart
+          new Chart(tagAnalysisCtx, {
+            type: 'bar',
+            data: tagAnalysisData,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  stacked: false,
+                  title: {
+                    display: true,
+                    text: 'Tags',
+                    font: {
+                      size: 14,
+                      weight: 'bold'
+                    }
+                  },
+                  ticks: {
+                    font: {
+                      size: 12
+                    }
+                  }
+                },
+                y: {
+                  beginAtZero: true,
+                  title: {
+                    display: true,
+                    text: 'Amount (IQD)',
+                    font: {
+                      size: 14,
+                      weight: 'bold'
+                    }
+                  },
+                  ticks: {
+                    callback: function (value) {
+                      return formatNumberWithCommas(value) + ' IQD';
+                    },
+                    font: {
+                      size: 12
+                    }
+                  }
+                }
+              },
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      let label = context.dataset.label || '';
+                      if (label) {
+                        label += ': ';
+                      }
+                      if (context.parsed.y !== null) {
+                        label +=
+                          formatNumberWithCommas(context.parsed.y.toFixed(2)) +
+                          ' IQD';
+                      }
+                      return label;
+                    }
+                  },
+                  titleFont: {
+                    size: 14
+                  },
+                  bodyFont: {
+                    size: 12
+                  }
+                },
+                title: {
+                  display: true,
+                  text: 'Tag Analysis',
+                  font: {
+                    size: 20,
+                    weight: 'bold'
+                  },
+                  padding: {
+                    top: 10,
+                    bottom: 30
+                  }
+                },
+                legend: {
+                  position: 'top',
+                  labels: {
+                    font: {
+                      size: 12
+                    },
+                    padding: 20
+                  }
+                }
+              },
+              parsing: {
+                yAxisKey: 'y'
+              },
+              skipNull: true,
+              layout: {
+                padding: {
+                  left: 10,
+                  right: 10,
+                  top: 0,
+                  bottom: 0
+                }
+              },
+              onClick: (event, elements) => {
+                if (elements.length > 0) {
+                  const clickedElement = elements[0];
+                  const datasetIndex = clickedElement.datasetIndex;
+                  const index = clickedElement.index;
+
+                  // Reset all bars to their original color
+                  tagAnalysisChart.data.datasets.forEach((dataset, i) => {
+                    dataset.backgroundColor =
+                      i === 0
+                        ? 'rgba(75, 192, 192, 0.6)'
+                        : 'rgba(255, 99, 132, 0.6)';
+                  });
+
+                  // Highlight the clicked bar
+                  tagAnalysisChart.data.datasets[datasetIndex].backgroundColor =
+                    tagAnalysisChart.data.datasets[
+                      datasetIndex
+                    ].backgroundColor.map((color, i) =>
+                      i === index ? 'rgba(255, 255, 0, 0.8)' : color
+                    );
+
+                  tagAnalysisChart.update();
+
+                  // Send message to parent window
+                  const clickedTag = tagLabels[index];
+                  const clickedType = datasetIndex === 0 ? 'Income' : 'Expense';
+                  window.opener.postMessage(
+                    {
+                      action: 'highlightRows',
+                      tag: clickedTag,
+                      type: clickedType
+                    },
+                    '*'
+                  );
+                }
+              }
+            }
+          });
+          console.log('Tag Analysis Chart created successfully');
+
+          // Store the chart instance in a variable
+          window.tagAnalysisChart = tagAnalysisChart;
+        } else {
+          graphContainer.style.display = 'none';
+          noTagsMessage.style.display = 'block';
+          console.log('No tags found in the data');
         }
+      });
+
+      function formatNumberWithCommas(number) {
+        return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      }
     </script>
-</body>
+  </body>
 </html>

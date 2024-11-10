@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('remainingMoneyIQD').textContent = formatNumberWithCommas(remainingIQD.toFixed(2)) + ' IQD';
     }
 
-    function addNewTag() {
+  function addNewTag() {
         const newTag = document.getElementById('newTagInput').value.trim();
         const tagColor = document.getElementById('tagColorPicker').value;
         if (newTag) {
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Function to toggle tag visibility and highlighting
-    function toggleTag(tag) {
+  function toggleTag(tag) {
         const rows = tableContainer.querySelectorAll('tr');
         const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === tag);
         const tagColor = tagButton ? tagButton.style.backgroundColor : '';
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Set checkbox state based on whether the tag is in the tags column
-                const currentTags = tagsCell.textContent.split(', ').map(t => t.trim());
+              const currentTags = tagsCell.textContent.split(',').map(t => t.trim());
                 checkbox.checked = currentTags.includes(tag.trim());
                 
                 // Highlight row if checkbox is checked or note contains tag
@@ -389,13 +389,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (index > 0) { // Skip header row
                 const checkboxes = row.querySelectorAll('input[type="checkbox"]');
                 const tagsCell = row.children[4]; // Tags column
-                const existingTags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
                 const newTags = Array.from(checkboxes)
                     .filter(checkbox => checkbox.checked)
                     .map(checkbox => checkbox.dataset.tag);
-            
+
+                let Tagnames = [];
+                checkboxes.forEach((checkbox) => {
+                  if (Tagnames.includes(checkbox.dataset.tag) == false)
+                    Tagnames.push(checkbox.dataset.tag);
+                })
+                const existingTags = tagsCell.textContent
+                  .split(',')
+                  .filter((tag) => tag.trim() !== '')
+                  .filter((tag) => Tagnames.includes(tag) == false);
+
                 // Combine existing tags with new tags, removing duplicates
                 const updatedTags = [...new Set([...existingTags, ...newTags])];
+                //const updatedTags = [...new Set([...newTags])];
                 tagsCell.textContent = updatedTags.join(', ');
             
                 // Update row styling
@@ -423,7 +433,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = table.rows[index + 1]; // +1 to skip header row
             if (row) {
                 const tagsCell = row.children[4];
-                data.tags = tagsCell.textContent.split(', ').filter(tag => tag.trim() !== '');
+                data.tags = tagsCell.textContent.split(',').filter(tag => tag.trim() !== '');
             }
         });
     }
@@ -444,7 +454,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners to existing tag buttons
     function addTagButtonListeners() {
         document.querySelectorAll('.tagButton').forEach(button => {
-            button.addEventListener('click', function() {
+          button.addEventListener('click', function () {
                 toggleTag(this.textContent);
                 showCheckboxesForEditing(this.textContent);
             });
@@ -500,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (index > 0) { // Skip header row
                 const cells = row.querySelectorAll('td');
                 const amount = parseFloat(cells[2].textContent.replace(/,/g, ''));
-                const tags = cells[4].textContent.split(', ').filter(tag => tag.trim() !== '');
+                const tags = cells[4].textContent.split(',').filter(tag => tag.trim() !== '');
                 
                 tags.forEach(tag => {
                     if (!data.tags[tag]) {
@@ -607,17 +617,21 @@ document.addEventListener('DOMContentLoaded', function() {
         return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
-    function saveData() {
+  function saveData() {
+        console.log(dataRows.at(4));
+        localStorage.removeItem('csvAnalyzerData');
         const data = {
             dataRows: dataRows.map(row => ({
-                ...row,
-                tags: row.row.querySelector('td:nth-child(5)').textContent.split(', ').filter(tag => tag.trim() !== '')
+              ...row,
+              //              tags: row.row.querySelector('td:nth-child(5)').textContent.split(',').filter(tag => tag.trim() !== '')
+              tags: row.tags
             })),
             tags: Array.from(document.querySelectorAll('.tagButton')).map(btn => ({
                 name: btn.textContent,
                 color: btn.style.backgroundColor
             }))
         };
+        console.log(data);
         localStorage.setItem('csvAnalyzerData', JSON.stringify(data));
         alert('Data saved successfully!');
     }
@@ -627,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
             dataRows: dataRows.map(row => ({
                 ...row,
                 note: row.row.querySelector('td:nth-child(4)').textContent,
-                tags: row.row.querySelector('td:nth-child(5)').textContent.split(', ').filter(tag => tag.trim() !== '')
+                tags: row.row.querySelector('td:nth-child(5)').textContent.split(',').filter(tag => tag.trim() !== '')
             })),
             tags: Array.from(document.querySelectorAll('.tagButton')).map(btn => ({
                 name: btn.textContent,
@@ -743,7 +757,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function toggleTag(tag) {
+  function toggleTag(tag) {
         const rows = document.querySelectorAll('#tableContainer tr');
         const tagButton = Array.from(document.querySelectorAll('.tagButton')).find(btn => btn.textContent === tag);
         const tagColor = tagButton ? tagButton.style.backgroundColor : '';
@@ -766,7 +780,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             
                 // Set checkbox state based on whether the tag is in the tags column
-                const currentTags = tagsCell.textContent.split(', ').map(t => t.trim());
+                const currentTags = tagsCell.textContent.split(',').map(t => t.trim());
                 checkbox.checked = currentTags.includes(tag.trim());
             
                 // Highlight row if checkbox is checked or note contains tag

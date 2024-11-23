@@ -34,7 +34,7 @@
         <button id="uploadWithDuplicateCheckBtn">Upload with Duplicate Check</button>
         <button id="analyzeBtn">Analyze Now</button>
         <button id="tagAnalyzeBtn">Tag Analyze</button>
-        <button id="aiAnalyzeBtn">AI Analyze</button>
+        <button id="aiAnalyzeBtn" onclick="openAIAnalyzer()">AI Analyze</button>
         <div id="summaryContainer">
             <p>Total: <span id="totalAmount">0.00</span></p>
             <p>Expenses: <span id="totalExpenses">0.00</span></p>
@@ -238,20 +238,21 @@
             document.getElementById('remainingMoneyIQD').textContent = remainingMoneyIQD.toFixed(2);
         }
 
-
-        // Also call updatePageContent after restoring data
-        document.getElementById('restoreFileInput').addEventListener('change', function(event) {
-            // ... (existing code for file reading and parsing)
-            reader.onload = function(e) {
-                try {
-                    // ... (existing code)
-                    alert('Data restored successfully!');
-                    updatePageContent(); // Call this function after restoring data
-                } catch (error) {
-                    // ... (existing error handling)
+        function openAIAnalyzer() {
+            // Store current financial data before opening analyzer
+            const financialData = {
+                rows: dataRows,
+                summary: {
+                    total: document.getElementById('totalAmount').textContent,
+                    expenses: document.getElementById('totalExpenses').textContent,
+                    incomes: document.getElementById('totalIncomes').textContent,
+                    remainingUSD: document.getElementById('remainingMoney').textContent,
+                    remainingIQD: document.getElementById('remainingMoneyIQD').textContent
                 }
             };
-        });
+            localStorage.setItem('financialData', JSON.stringify(financialData));
+            window.open('enhanced-ai-analyzer.html', '_blank');
+        }
     </script>
 </body>
 </html>

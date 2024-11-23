@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced AI Financial Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        #chat-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        #sidebar {
+            width: 300px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #main-chat {
+            flex-grow: 1;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #chat-history {
+            height: 500px;
+            overflow-y: auto;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+        .message {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20px;
+        }
+        .ai-message {
+            background-color: #f5f5f5;
+            margin-right: 20px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        #chat-input-container {
+            flex-grow: 1;
+            display: flex;
+        }
+        #chat-input {
+            flex-grow: 1;
+            min-height: 40px;
+            max-height: 200px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: inherit;
+            resize: none;
+            overflow-y: hidden;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .model-selector {
+            margin-bottom: 15px;
+        }
+        .model-selector select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .content-toggle {
+            margin-bottom: 15px;
+        }
+        .content-toggle label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #context-info {
+            padding: 10px;
+            background-color: #fff3e0;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .box {
+            margin-bottom: 15px;
+        }
+        .box textarea {
+            width: 100%;
+            height: 100px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        .api-key-section {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .input-with-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .input-with-buttons input {
+            flex-grow: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .input-with-buttons button {
+            padding: 8px;
+            min-width: 60px;
+        }
+        small {
+            color: #666;
+            font-size: 0.8em;
+        }
+        .saved-chats-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        #saved-chats-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .saved-chat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .saved-chat-item:hover {
+            background: #f0f0f0;
+        }
+        .chat-controls {
+            display: flex;
+            gap: 5px;
+            margin-top: 10px;
+        }
+        #chat-name-input {
+            flex: 1;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .delete-chat-btn {
+            color: #dc3545;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 5px;
+        }
+        .delete-chat-btn:hover {
+            color: #bd2130;
+        }
+        .load-chat-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .load-chat-btn:hover {
+            background-color: #45a049;
+        }
+        .chat-timestamp {
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced AI Financial Analysis</h1>
+        
+        <div id="chat-container">
+            <div id="sidebar">
+                <div class="model-selector">
+                    <h3>Select AI Model</h3>
+                    <select id="ai-model">
+                        <option value="nousresearch/nous-hermes-2-mixtral-8x7b-dpo">Mixtrall</option>
+                        <option value="nousresearch/hermes-3-llama-3.1-405b:free">Hermes Free</option>
+                        <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="openai/chatgpt-4o-latest">GPT-4o</option>
+                        <option value="deepseek/deepseek-chat">DeepSeek V2.5</option>
+                        <option value="openai/o1-mini-2024-09-12">o1-mini</option>
+                        <option value="google/gemini-exp-1114:free">Gemini (Free)</option>
+                    </select>
+                </div>
+
+                <div class="saved-chats-section">
+                    <h3>Saved Chats</h3>
+                    <div id="saved-chats-list"></div>
+                    <div class="chat-controls">
+                        <input type="text" id="chat-name-input" placeholder="Chat name...">
+                        <button id="save-chat">Save Chat</button>
+                    </div>
+                </div>
+
+                <div class="api-key-section">
+                    <h3>API Key Settings</h3>
+                    <div class="input-with-buttons">
+                        <input type="password" id="api-key-input" placeholder="Enter OpenRouter API Key">
+                        <button id="save-api-key">Save Key</button>
+                        <button id="show-hide-key">Show</button>
+                    </div>
+                    <small>Your API key is stored securely in your browser</small>
+                </div>
+
+                <div class="content-toggle">
+                    <h3>Content Settings</h3>
+                    <label>
+                        <input type="checkbox" id="include-finance" checked>
+                        Include Finance Data
+                    </label>
+                </div>
+
+                <div class="content-toggle">
+                    <label>
+                        <input type="checkbox" id="include-want" checked>
+                        What I Want
+                    </label>
+                    <textarea id="want-box" rows="4" cols="50" oninput="saveBoxContent('want')"></textarea>
+                </div>
+                <div class="content-toggle">
+                    <label>
+                        <input type="checkbox" id="include-need" checked>
+                        What I Need
+                    </label>
+                    <textarea id="need-box" rows="4" cols="50" oninput="saveBoxContent('need')"></textarea>
+                </div>
+                <div class="content-toggle">
+                    <label>
+                        <input type="checkbox" id="include-goals" checked>
+                        What Are My Goals
+                    </label>
+                    <textarea id="goals-box" rows="4" cols="50" oninput="saveBoxContent('goals')"></textarea>
+                </div>
+                <div class="content-toggle">
+                    <label>
+                        <input type="checkbox" id="include-notes" checked>
+                        Additional Notes
+                    </label>
+                    <textarea id="notes-box" rows="4" cols="50" oninput="saveBoxContent('notes')"></textarea>
+                </div>
+
+                <div id="context-info">
+                    <h3>Context Info</h3>
+                    <p>Messages in context: <span id="context-count">0</span></p>
+                    <p>Context size: <span id="context-size">0</span> tokens</p>
+                    <p>Remaining capacity: <span id="remaining-tokens">0</span> tokens</p>
+                    <p>Estimated messages left: <span id="remaining-messages">0</span></p>
+                </div>
+
+                <button id="new-chat">New Chat</button>
+            </div>
+
+            <div id="main-chat">
+                <div id="chat-history"></div>
+                
+                <div class="input-group">
+                    <div id="chat-input-container">
+                        <textarea id="chat-input" placeholder="Type your message..." rows="1"></textarea>
+                    </div>
+                    <button id="send-btn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let financialData = null;
+        let chatHistory = [];
+        let contextSize = 0;
+        const MAX_CONTEXT_SIZE = 4000; // Adjust based on model's context window
+        const FINANCE_DATA_TOKEN_ESTIMATE = 500; // Approximate tokens for finance data
+
+        // Add model context limits
+        const MODEL_LIMITS = {
+            'nousresearch/nous-hermes-2-mixtral-8x7b-dpo': 32000,
+            'nousresearch/hermes-3-llama-3.1-405b:free': 4000,
+            'anthropic/claude-3.5-sonnet': 200000,
+            'openai/chatgpt-4o-latest': 128000,
+            'deepseek/deepseek-chat': 32000,
+            'openai/o1-mini-2024-09-12': 16000,
+            'google/gemini-exp-1114:free': 32000
+        };
+
+        // Average tokens per message (assuming 100 words ≈ 125 tokens)
+        const AVG_TOKENS_PER_MSG = 125;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadBoxContent();
+            loadFinancialData();
+            updateContextInfo();
+            loadSavedChats();
+        });
+
+        // Load financial data from localStorage
+        function loadFinancialData() {
+            const storedData = localStorage.getItem('financialData');
+            if (storedData) {
+                try {
+                    financialData = JSON.parse(storedData);
+                    displayFinancialSummary();
+                } catch (error) {
+                    console.error('Error parsing financial data:', error);
+                    displayChatMessage('system', 'Error loading financial data. Please try reopening the analyzer.');
+                }
+            } else {
+                displayChatMessage('system', 'No financial data found. Please make sure you have data in the main application.');
+            }
+        }
+
+        // Display financial summary
+        function displayFinancialSummary() {
+            if (!financialData) return;
+            
+            let summary = '📊 Financial Summary:\n\n';
+            
+            if (financialData.summary) {
+                // Format IQD amounts with correct comma placement
+                const formatIQD = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                
+                summary += `Total: ${formatIQD(financialData.summary.total)} IQD\n`;
+                summary += `📉 Expenses: ${formatIQD(financialData.summary.expenses)} IQD\n`;
+                summary += `📈 Income: ${formatIQD(financialData.summary.incomes)} IQD\n`;
+                summary += `💵 Remaining (USD): $${financialData.summary.remainingUSD} USD\n`;
+                summary += `💵 Remaining (IQD): ${formatIQD(financialData.summary.remainingIQD)} IQD\n\n`;
+            }
+            
+            if (financialData.rows && financialData.rows.length > 0) {
+                summary += `📝 Transaction Details: ${financialData.rows.length} transactions found\n`;
+            }
+            
+            displayChatMessage('system', summary);
+        }
+
+        // Save box content
+        function saveBoxContent(boxName) {
+            const content = document.getElementById(`${boxName}-box`).value;
+            localStorage.setItem(`${boxName}BoxContent`, content);
+        }
+
+        // Load box content
+        function loadBoxContent() {
+            ['want', 'need', 'goals', 'notes'].forEach(boxName => {
+                const content = localStorage.getItem(`${boxName}BoxContent`) || '';
+                document.getElementById(`${boxName}-box`).value = content;
+            });
+        }
+
+        // Estimate tokens in a message
+        function estimateTokens(text) {
+            // Rough estimation: 1 token ≈ 4 characters
+            return Math.ceil(text.length / 4);
+        }
+
+        // Update context information display
+        function updateContextInfo() {
+            const currentModel = document.getElementById('ai-model').value;
+            const modelLimit = MODEL_LIMITS[currentModel];
+            const remainingTokens = modelLimit - contextSize;
+            const estimatedMessagesLeft = Math.floor(remainingTokens / AVG_TOKENS_PER_MSG);
+
+            document.getElementById('context-count').textContent = chatHistory.length;
+            document.getElementById('context-size').textContent = contextSize;
+            document.getElementById('remaining-tokens').textContent = remainingTokens;
+            document.getElementById('remaining-messages').textContent = estimatedMessagesLeft;
+        }
+
+        // Manage context window
+        function manageContext(newMessage) {
+            const newTokens = estimateTokens(newMessage);
+            
+            // If adding new message would exceed context window
+            while (chatHistory.length > 0 && (contextSize + newTokens > MAX_CONTEXT_SIZE)) {
+                // Remove oldest message, but keep finance data
+                const removed = chatHistory.shift();
+                contextSize -= estimateTokens(removed.content);
+            }
+
+            chatHistory.push({
+                role: 'user',
+                content: newMessage
+            });
+            contextSize += newTokens;
+            updateContextInfo();
+        }
+
+        // Display chat message
+        function displayChatMessage(role, content) {
+            const chatHistory = document.getElementById('chat-history');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}-message`;
+            messageDiv.innerHTML = marked.parse(content);
+            chatHistory.appendChild(messageDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        // Send message to AI
+        async function sendToAI(message) {
+            const model = document.getElementById('ai-model').value;
+            const apiKey = localStorage.getItem('openrouter-api-key');
+            
+            if (!apiKey) {
+                alert('Please set your OpenRouter API key first');
+                return;
+            }
+
+            // Show loading message
+            displayChatMessage('system', 'Processing your request...');
+
+            // Prepare context
+            let context = '=== CONVERSATION HISTORY ===\n';
+            // Add chat history to context with clear sequence
+            if (chatHistory.length > 0) {
+                context += 'Previous conversation in chronological order:\n';
+                chatHistory.forEach((msg, index) => {
+                    context += `[Message ${index + 1}]\n`;
+                    context += `From: ${msg.role.toUpperCase()}\n`;
+                    context += `Content: ${msg.content}\n\n`;
+                });
+                context += '---End of Conversation History---\n\n';
+            }
+
+            context += '=== CURRENT FINANCIAL DATA ===\n';
+            if (document.getElementById('include-finance').checked && financialData) {
+                const formatIQD = (num) => num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                const processedTransactions = (financialData.rows || []).map(tx => ({
+                    ...tx,
+                    amount: formatIQD(tx.amount) + ' IQD'
+                }));
+                
+                const financialContext = {
+                    summary: financialData.summary,
+                    transactionCount: financialData.rows ? financialData.rows.length : 0,
+                    transactions: processedTransactions
+                };
+                context += `${JSON.stringify(financialContext, null, 2)}\n\n`;
+                context += `Note: All transaction amounts are in IQD (Iraqi Dinar), regardless of the transaction type.\n\n`;
+            }
+            
+            context += '=== USER PREFERENCES ===\n';
+            const sectionNames = {
+                'want': 'WHAT I WANT',
+                'need': 'WHAT I NEED',
+                'goals': 'WHAT ARE MY GOALS',
+                'notes': 'ADDITIONAL NOTES'
+            };
+
+            Object.entries(sectionNames).forEach(([boxName, displayName]) => {
+                if (document.getElementById(`include-${boxName}`).checked) {
+                    const content = document.getElementById(`${boxName}-box`).value;
+                    if (content) {
+                        context += `${displayName}:\n${content}\n\n`;
+                    }
+                }
+            });
+
+            // Log the context being sent to AI
+            console.log('Context being sent to AI:', context);
+
+            // Prepare messages array with clear instructions
+            const messages = [
+                {
+                    role: 'system',
+                    content: `You are a financial analysis AI assistant. Please follow these guidelines carefully:
+
+1. IMPORTANT: When a user gives you an instruction about how to respond to future questions, you must follow that instruction exactly.
+   For example, if they say "when I ask X, say Y", you must respond with Y when they ask X.
+
+2. When answering questions about previous messages:
+   - The conversation history is numbered in chronological order ([Message 1] is the oldest)
+   - Only refer to actual conversation content, not to instructions about how to respond
+   - Check if there are any active instructions about how to respond
+
+3. For financial analysis:
+   - Consider the current financial data and transaction details
+   - Take into account the user's stated wants, needs, and goals
+   - All amounts are in IQD unless explicitly stated as USD
+
+Here is the complete context:\n${context}`
+                },
+                {
+                    role: 'user',
+                    content: message
+                }
+            ];
+
+            // Log the full messages array being sent to AI
+            console.log('Full messages being sent to AI:', JSON.stringify(messages, null, 2));
+
+            try {
+                console.log('Sending request to OpenRouter API...');
+                const requestBody = {
+                    model: model,
+                    messages: messages,
+                    temperature: 0.7,
+                    max_tokens: 1000
+                };
+                console.log('Request body:', requestBody);
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
+                        'HTTP-Referer': 'https://localhost',
+                        'X-Title': 'Financial Analysis Assistant'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('API Error Response:', errorData);
+                    throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('API Response:', data);
+                
+                // Remove loading message
+                const chatHistory = document.getElementById('chat-history');
+                const loadingMessage = chatHistory.lastElementChild;
+                if (loadingMessage && loadingMessage.textContent === 'Processing your request...') {
+                    chatHistory.removeChild(loadingMessage);
+                }
+
+                if (data.error) {
+                    throw new Error(data.error.message || 'API Error');
+                }
+
+                if (data.choices && data.choices[0]) {
+                    const aiResponse = data.choices[0].message.content;
+                    displayChatMessage('ai', aiResponse);
+                    manageContext(aiResponse);
+                } else {
+                    throw new Error('No response from AI');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                displayChatMessage('ai', `Error: ${error.message || 'Failed to get response from AI'}\n\nTroubleshooting Tips:\n1. Check your API key is correct\n2. Make sure you're connected to the internet\n3. Try refreshing the page\n4. If using Hermes (free), there might be high demand - try again in a few moments`);
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                displayChatMessage('user', message);
+                manageContext(message);
+                sendToAI(message);
+                input.value = '';
+                input.style.height = 'auto'; // Reset height after sending
+            }
+        });
+
+        document.getElementById('chat-input').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        document.getElementById('chat-input').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                document.getElementById('send-btn').click();
+                this.style.height = 'auto'; // Reset height after sending
+            }
+        });
+
+        document.getElementById('new-chat').addEventListener('click', () => {
+            chatHistory = [];
+            contextSize = 0;
+            document.getElementById('chat-history').innerHTML = '';
+            updateContextInfo();
+        });
+
+        // Save box content when save buttons are clicked
+        document.querySelectorAll('.save-box-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const boxName = btn.getAttribute('data-box');
+                saveBoxContent(boxName);
+            });
+        });
+
+        // API Key Management
+        document.getElementById('save-api-key').addEventListener('click', () => {
+            const apiKey = document.getElementById('api-key-input').value.trim();
+            if (apiKey) {
+                localStorage.setItem('openrouter-api-key', apiKey);
+                alert('API key saved successfully!');
+            } else {
+                alert('Please enter an API key');
+            }
+        });
+
+        document.getElementById('show-hide-key').addEventListener('click', function() {
+            const apiKeyInput = document.getElementById('api-key-input');
+            const button = this;
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                button.textContent = 'Hide';
+            } else {
+                apiKeyInput.type = 'password';
+                button.textContent = 'Show';
+            }
+        });
+
+        // Load saved API key if exists
+        const savedApiKey = localStorage.getItem('openrouter-api-key');
+        if (savedApiKey) {
+            document.getElementById('api-key-input').value = savedApiKey;
+        }
+
+        // Load saved chats on page load
+        function loadSavedChats() {
+            const savedChats = JSON.parse(localStorage.getItem('savedChats') || '{}');
+            const chatsList = document.getElementById('saved-chats-list');
+            chatsList.innerHTML = '';
+            
+            Object.entries(savedChats).forEach(([name, chat]) => {
+                const chatItem = document.createElement('div');
+                chatItem.className = 'saved-chat-item';
+                
+                const chatName = document.createElement('span');
+                chatName.textContent = name;
+                chatName.style.cursor = 'pointer';
+                chatName.onclick = () => loadChat(name);
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-chat-btn';
+                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteChat(name);
+                };
+                
+                chatItem.appendChild(chatName);
+                chatItem.appendChild(deleteBtn);
+                chatsList.appendChild(chatItem);
+            });
+        }
+
+        // Save current chat
+        document.getElementById('save-chat').addEventListener('click', () => {
+            const chatName = document.getElementById('chat-name-input').value.trim();
+            if (!chatName) {
+                alert('Please enter a name for the chat');
+                return;
+            }
+            
+            // Get all messages from chat history
+            const chatHistoryDiv = document.getElementById('chat-history');
+            const messages = [];
+            chatHistoryDiv.querySelectorAll('.message').forEach(msgDiv => {
+                const role = msgDiv.classList.contains('user-message') ? 'user' : 'assistant';
+                const content = msgDiv.textContent;
+                messages.push({ role, content });
+            });
+            
+            const savedChats = JSON.parse(localStorage.getItem('savedChats') || '{}');
+            savedChats[chatName] = {
+                messages: messages,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('savedChats', JSON.stringify(savedChats));
+            document.getElementById('chat-name-input').value = '';
+            loadSavedChats();
+            displayChatMessage('system', `Chat saved as "${chatName}"`);
+        });
+
+        // Load a saved chat
+        function loadChat(chatName) {
+            const savedChats = JSON.parse(localStorage.getItem('savedChats') || '{}');
+            const chat = savedChats[chatName];
+            
+            if (!chat) {
+                displayChatMessage('system', `Error: Chat "${chatName}" not found`);
+                return;
+            }
+
+            if (confirm(`Load chat "${chatName}"? Current chat will be replaced.`)) {
+                const chatHistoryDiv = document.getElementById('chat-history');
+                chatHistoryDiv.innerHTML = '';
+                
+                if (Array.isArray(chat.messages)) {
+                    chatHistory = []; // Reset chat history
+                    chat.messages.forEach(msg => {
+                        if (msg && msg.role && msg.content) {
+                            displayChatMessage(msg.role, msg.content);
+                            chatHistory.push(msg);
+                        }
+                    });
+                    displayChatMessage('system', `Loaded chat "${chatName}"`);
+                } else {
+                    displayChatMessage('system', 'Error: Chat data is corrupted');
+                }
+            }
+        }
+
+        // Delete a saved chat
+        function deleteChat(chatName) {
+            if (confirm(`Are you sure you want to delete chat "${chatName}"?`)) {
+                const savedChats = JSON.parse(localStorage.getItem('savedChats') || '{}');
+                delete savedChats[chatName];
+                localStorage.setItem('savedChats', JSON.stringify(savedChats));
+                loadSavedChats();
+                displayChatMessage('system', `Deleted chat "${chatName}"`);
+            }
+        }
+
+        // Add model change listener
+        document.getElementById('ai-model').addEventListener('change', updateContextInfo);
+    </script>
+</body>
+</html>
